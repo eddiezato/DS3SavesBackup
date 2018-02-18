@@ -10,8 +10,19 @@ You can set up:
 
 Backup works only if 'Dark Souls 3' is running.
 
-### Download
+#
+Простейшая утилита для автоматического копирования файлов сохранений.
+
+Вы можете настроить:
+- путь к файлам сохранений,
+- путь к месту хранения копий,
+- частоту копирования файлов,
+- максимальное кол-во хранимых копий.
+
+Копирование работает только, если запущена 'Dark Souls 3'.
+
+### Download / Скачать
 [releases](https://github.com/eddiezato/DS3SavesBackup/releases) (Windows x86/x64, .NET Framework 4.5)
 
-### Preview
+### Preview / Превью
 ![Preview](/readme/preview.png)
