@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Threading;
 
 namespace DS3SavesBackup
@@ -12,6 +10,10 @@ namespace DS3SavesBackup
     class Program
     {
         private static string[] localized;
+        private static string savesPath, backupPath;
+        private static int interval, maxBackup;
+
+        private static Timer mTimer;
 
         private static string nowToString()
         {
@@ -40,44 +42,43 @@ namespace DS3SavesBackup
             configuration.Save(ConfigurationSaveMode.Modified);
         }
 
-        private static void mainLoop(string saves_path, string backup_path, int maxbkup, List<string> backupList)
+        private static void mainLoop()
         {
             Process[] ds3Process = Process.GetProcessesByName("DarkSoulsIII");
             if (ds3Process.Length > 0)
             {
-                if (Directory.GetFiles(saves_path).Length == 0)
-                {
-                    messWrite(localized[10], true);
-                }
-                else
+                if (Directory.GetFiles(savesPath).Length > 0)
                 {
 
                     messWrite(localized[6] + "...", false);
-                    if (backupList.Count == maxbkup)
+
+                    string[] backupFiles = Directory.GetFiles(backupPath, "ds3*.zip", SearchOption.TopDirectoryOnly);
+                    if (backupFiles.Length >= maxBackup)
                     {
                         try
                         {
-                            File.Delete(backupList.First());
+                            for (int i = 0; i < backupFiles.Length - maxBackup + 1; i++)
+                                File.Delete(backupFiles[i]);
                         }
                         catch (Exception e)
                         {
                             messWrite(e.ToString(), true);
-                            Environment.Exit(0);
                         }
-                        backupList.RemoveAt(0);
-                    }
-                    string backup = Path.Combine(backup_path, "ds3_" + nowToString() + ".zip");
-                    backupList.Add(backup);
+                     }
+                    string backup = Path.Combine(backupPath, "ds3_" + nowToString() + ".zip");
                     try
                     {
-                        ZipFile.CreateFromDirectory(saves_path, backup, CompressionLevel.Fastest, false);
+                        ZipFile.CreateFromDirectory(savesPath, backup, CompressionLevel.Fastest, false);
                     }
                     catch (Exception e)
                     {
                         messWrite(e.ToString(), true);
-                        Environment.Exit(0);
                     }
                     Console.WriteLine(" " + localized[7] + ": " + Path.GetFileName(backup));
+                }
+                else
+                {
+                    messWrite(localized[10], true);
                 }
             }
             else
@@ -130,10 +131,7 @@ namespace DS3SavesBackup
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine(localized[0] + "\n");
             Console.ResetColor();
-
-            string savesPath, backupPath;
-            int interval, maxBackup;
-
+            
             try
             {
                 interval = Convert.ToInt32(ConfigurationManager.AppSettings["auto_backup_interval_min"]);
@@ -207,13 +205,7 @@ namespace DS3SavesBackup
             Console.WriteLine(localized[5] + ": " + maxBackup.ToString() + "\n", true);
             Console.ResetColor();
 
-            List<string> backupList = new List<string>();
-            foreach (string filename in Directory.GetFiles(backupPath, "ds3*.zip", SearchOption.TopDirectoryOnly))
-            {
-                backupList.Add(filename);
-            }
-
-            Timer mTimer = new Timer((e) => { mainLoop(savesPath, backupPath, maxBackup, backupList); }, null, 0, interval * 1000 * 60);
+            mTimer = new Timer((z) => { mainLoop(); }, null, 0, interval * 60000);
             while (Console.ReadKey(true).Key != ConsoleKey.Q) { }
         }
     }
